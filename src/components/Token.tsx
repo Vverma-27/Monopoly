@@ -1,7 +1,3 @@
-import React from "react";
-import { IPlayerState } from "../Context";
-import TOKENS from "../constants/tokens";
-
 const Token = ({
   playerState: { inJail, playerCurrPosition },
   children,

@@ -20,8 +20,6 @@ import {
 import Game from "./routes/Game";
 import { ClosableToastConfig } from "./constants/toast";
 import JoinGame from "./routes/JoinGame";
-import WebRTC from "./components/WebRTC";
-
 function App() {
   // useEffect(() => {
   //   // Only run this code on the client side

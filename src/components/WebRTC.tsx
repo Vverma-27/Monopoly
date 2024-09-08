@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import "tailwindcss/tailwind.css";
 import { MyContext } from "../Context";
 import {
@@ -88,10 +88,7 @@ const WebRTCComponent = () => {
       signal("answer", { answer, socketId });
     };
 
-    const handleIceCandidate = async (
-      candidate: RTCIceCandidateInit,
-      socketId: string
-    ) => {
+    const handleIceCandidate = async (candidate: RTCIceCandidateInit) => {
       if (remotePeerConnection) {
         await remotePeerConnection.addIceCandidate(
           new RTCIceCandidate(candidate)
@@ -99,10 +96,7 @@ const WebRTCComponent = () => {
       }
     };
 
-    const handleAnswer = async (
-      answer: RTCSessionDescriptionInit,
-      socketId: string
-    ) => {
+    const handleAnswer = async (answer: RTCSessionDescriptionInit) => {
       const peer = localPeerConnection;
       if (peer) {
         await peer.setRemoteDescription(answer);
@@ -119,14 +113,14 @@ const WebRTCComponent = () => {
     socket?.on(
       "candidate",
       (data: { candidate: RTCIceCandidateInit; socketId: string }) => {
-        handleIceCandidate(data.candidate, data.socketId);
+        handleIceCandidate(data.candidate);
       }
     );
 
     socket?.on(
       "answer",
       (data: { answer: RTCSessionDescriptionInit; socketId: string }) => {
-        handleAnswer(data.answer, data.socketId);
+        handleAnswer(data.answer);
       }
     );
 

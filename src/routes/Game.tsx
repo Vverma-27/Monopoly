@@ -15,12 +15,9 @@ import AuctionModal from "../components/AuctionModal";
 const Game = () => {
   const {
     name,
-    setRolling,
-    rolling,
     gameState: { playerStates, gameId, currTurn },
     currentUserId,
     setGameState,
-    setRandomNumber,
     setMarketNotifs,
     setTradeNotifs,
     marketNotifs,

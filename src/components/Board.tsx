@@ -8,7 +8,7 @@ import { IPlayerState, MyContext, PlayerToken } from "../Context";
 import TOKENS from "../constants/tokens";
 import RollDice from "./DiceRoll";
 import Token from "./Token";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import WebRTC from "./WebRTC";
 import { ClosableToastConfig } from "../constants/toast";
 import { Tooltip } from "react-tooltip";

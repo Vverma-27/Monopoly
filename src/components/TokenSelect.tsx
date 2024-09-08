@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import Modal from "./Modal";
 import TOKENS from "../constants/tokens";
 import TokenSelectCard from "./TokenSelectCard";
-import { IPlayerState, MyContext, PlayerToken } from "../Context";
+import { MyContext, PlayerToken } from "../Context";
 import { useNavigate } from "react-router-dom";
 import COLORS from "../constants/colors";
 

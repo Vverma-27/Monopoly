@@ -1,8 +1,5 @@
-import { useRef, useState } from "react";
 import HotelGLB from "../assets/hotel.glb?url";
 import { useGLTF } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { Mesh } from "three";
 const Hotel = () => {
   const { scene } = useGLTF(HotelGLB);
   return (

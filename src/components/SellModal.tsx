@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Modal from "./Modal";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { Marketplace, MyContext } from "../Context";

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { MyContext } from "../Context";
 import { Canvas } from "@react-three/fiber";
 import Dice from "../Models/Dice";

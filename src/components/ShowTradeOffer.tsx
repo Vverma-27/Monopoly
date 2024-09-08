@@ -3,7 +3,7 @@ import { MyContext } from "../Context";
 
 const ShowTradeOffer = () => {
   const { socket } = useContext(MyContext);
-  const [tradeOffers, setTradeOffers] = useState<
+  const [_tradeOffers, setTradeOffers] = useState<
     Array<{
       from: string;
       fromSocketId: string;

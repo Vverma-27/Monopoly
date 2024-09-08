@@ -42,13 +42,16 @@ const TradeOfferDisplay = ({
                 <span className="font-bold">
                   {key[0].toUpperCase() + key.slice(1)}:
                 </span>
-                {tradeOffer.offer[key as keyof typeof tradeOffer.offer].map(
-                  (item) => (
-                    <div key={item.name}>
-                      {item.name}: ${item.price} (price)
-                    </div>
+                {
+                  //@ts-ignore
+                  tradeOffer.offer[key as keyof typeof tradeOffer.offer].map(
+                    (item: any) => (
+                      <div key={item.name}>
+                        {item.name}: ${item.price} (price)
+                      </div>
+                    )
                   )
-                )}
+                }
               </div>
             );
           })}
