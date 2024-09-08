@@ -1,0 +1,89 @@
+@import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Smokum&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+::after,
+::before {
+  box-sizing: border-box;
+}
+
+html {
+  @apply xs:text-[10px] text-[6px] 2xs:text-[8px] sm:text-[12px] md:text-[14px] lg:text-[16px] 2xl:text-[18px];
+}
+
+body,
+html,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow-y: hidden;
+}
+
+.row {
+  @apply grid col-span-full h-full items-center justify-center grid-rows-1 grid-cols-11;
+}
+
+.col {
+  @apply row-start-3 row-end-10 grid grid-cols-1 grid-rows-7 h-full;
+}
+
+.row-top {
+  @apply row-start-1 row-end-3;
+}
+.row-bottom {
+  @apply row-start-10 row-end-12;
+}
+.col-left {
+  @apply col-start-1 col-end-3;
+}
+.col-right {
+  @apply col-start-10 col-end-12;
+}
+.cell {
+  @apply flex items-center justify-center flex-1 h-full;
+}
+.row .cell {
+  @apply border-r border-y border-black;
+}
+.col .cell {
+  @apply border-b border-x border-black;
+}
+.row .p-cell {
+  @apply row-span-2 col-span-1;
+}
+.col .p-cell {
+  @apply row-span-1 col-span-2;
+}
+.c-cell {
+  @apply row-span-2 col-span-2;
+}
+.col .cell {
+  writing-mode: vertical-rl;
+}
+.col-right .cell {
+  transform: rotate(180deg);
+}
+
+.p-cell {
+  @apply flex flex-col items-center justify-between flex-1 h-full;
+}
+
+.jail.cell {
+  @apply items-end justify-start;
+}
+
+.center {
+  grid-row-start: 3;
+  grid-row-end: 10;
+  grid-column-start: 3;
+  grid-column-end: 10;
+  height: 100%;
+}
+
+#canvas {
+  position: absolute !important;
+  z-index: 20;
+}
