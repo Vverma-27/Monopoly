@@ -1,7 +1,9 @@
 import { io } from "socket.io-client";
 
 // "undefined" means the URL will be computed from the `window.location` object
-const URL = import.meta.env.PROD?import.meta.env.SERVER_URL:"ws://localhost:3000";
+const URL = import.meta.env.PROD
+  ? import.meta.env.VITE_SERVER_URL
+  : "ws://localhost:3000";
 
 export const getSocket = (name: string) => {
   // Connect to the default namespace to initiate the namespace creation/joining process
