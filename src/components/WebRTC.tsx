@@ -75,6 +75,7 @@ const WebRTCComponent = () => {
     const remotePeerConnection = new RTCPeerConnection();
 
     remotePeerConnection.ontrack = (event: RTCTrackEvent) => {
+      console.log("🚀 ~ useEffect ~ event:", event.streams);
       remoteVideoRef.current!.srcObject = event.streams[0];
     };
 
@@ -209,18 +210,21 @@ const WebRTCComponent = () => {
         </div>
       </div>
       <div className="flex space-x-4">
-        <button
-          onClick={startCall}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Start Call
-        </button>
-        <button
-          onClick={hangupCall}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
-          Hang Up
-        </button>
+        {localPeerConnection ? (
+          <button
+            onClick={startCall}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Start Call
+          </button>
+        ) : (
+          <button
+            onClick={hangupCall}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Hang Up
+          </button>
+        )}
         <button
           onClick={toggleVideo}
           className={`bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700 ${
