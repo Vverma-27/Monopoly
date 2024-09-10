@@ -210,7 +210,7 @@ const WebRTCComponent = () => {
         </div>
       </div>
       <div className="flex space-x-4">
-        {localPeerConnection ? (
+        {!localPeerConnection ? (
           <button
             onClick={startCall}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
