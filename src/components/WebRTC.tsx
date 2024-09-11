@@ -7,6 +7,7 @@ import {
   FaVideo,
   FaVideoSlash,
 } from "react-icons/fa";
+import { MdCallEnd } from "react-icons/md";
 
 const WebRTCComponent = () => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -45,6 +46,9 @@ const WebRTCComponent = () => {
   const otherSocketIds = playerStates
     .filter((p) => p.name !== name)
     .map((e) => e.id);
+  const otherSocketNames = playerStates
+    .filter((p) => p.name !== name)
+    .map((e) => e.name);
 
   const signal = (eventName: string, data: any) => {
     socket?.emit(eventName, data);
@@ -252,64 +256,70 @@ const WebRTCComponent = () => {
   };
 
   return (
-    <div className="p-4 z-[52]">
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="border rounded-lg p-2">
-          <h2 className="text-lg font-semibold mb-2">Local Video</h2>
+    <div className="p-2 absolute top-0 left-0 z-[1]">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="border rounded-lg p-2 relative bg-black">
           <video
             ref={(e) => {
               if (e) e.srcObject = localStream;
             }}
             autoPlay
             muted
-            className="w-full h-full border border-gray-300 rounded-lg"
+            className="w-full h-full "
           />
+          <div className="action-buttons absolute bottom-1 left-1 flex gap-1 items-end w-full">
+            <p className=" text-white font-normal text-xs flex-1">{name}</p>
+
+            {!Object.keys(localPeerConnections).length ? (
+              <button
+                onClick={startCall}
+                className="bg-blue-500 text-white px-2 py-1 text-[0.6rem] rounded hover:bg-blue-700"
+              >
+                Start Call
+              </button>
+            ) : (
+              <div className="flex flex-1 gap-1 justify-center">
+                <button
+                  onClick={hangupCall}
+                  className="px-2 py-1 rounded bg-gray-700"
+                >
+                  <MdCallEnd className="text-red-500" />
+                </button>
+                <button
+                  onClick={toggleVideo}
+                  className={`bg-gray-500 text-white px-2 py-1 text-sm rounded hover:bg-gray-700 ${
+                    videoEnabled ? "bg-gray-700" : "bg-gray-300"
+                  }`}
+                >
+                  {!videoEnabled ? <FaVideoSlash /> : <FaVideo />}
+                </button>
+                <button
+                  onClick={toggleAudio}
+                  className={`bg-gray-500 text-white px-2 py-1 text-sm rounded hover:bg-gray-700 ${
+                    audioEnabled ? "bg-gray-700" : "bg-gray-300"
+                  }`}
+                >
+                  {!audioEnabled ? <FaMicrophoneSlash /> : <FaMicrophone />}
+                </button>
+              </div>
+            )}
+            <div className="flex-1"></div>
+          </div>
         </div>
-        <div className="border rounded-lg p-2">
-          <h2 className="text-lg font-semibold mb-2">Remote Video</h2>
-          {otherSocketIds.map((id) => (
+        {otherSocketNames.map((name, i) => (
+          <div className="border rounded-lg p-2 relative bg-black">
             <video
               ref={(el) => {
-                if (el) remoteVidRefs.current[id] = el;
+                if (el) remoteVidRefs.current[otherSocketIds[i]] = el;
               }}
               autoPlay
-              className="w-full h-full border border-gray-300 rounded-lg"
+              className="w-full h-full "
             />
-          ))}
-        </div>
-      </div>
-      <div className="flex space-x-4">
-        {!localPeerConnections.length ? (
-          <button
-            onClick={startCall}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Start Call
-          </button>
-        ) : (
-          <button
-            onClick={hangupCall}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            Hang Up
-          </button>
-        )}
-        <button
-          onClick={toggleVideo}
-          className={`bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700 ${
-            videoEnabled ? "bg-gray-700" : "bg-gray-300"
-          }`}
-        >
-          {!videoEnabled ? <FaVideoSlash /> : <FaVideo />}
-        </button>
-        <button
-          onClick={toggleAudio}
-          className={`bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700 ${
-            audioEnabled ? "bg-gray-700" : "bg-gray-300"
-          }`}
-        >
-          {!audioEnabled ? <FaMicrophoneSlash /> : <FaMicrophone />}
-        </button>
+            <p className="absolute bottom-1 left-1 text-white font-normal text-xs">
+              {name}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );
