@@ -211,7 +211,7 @@ const WebRTCComponent = () => {
         }
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
-        if (iceCandidatesQueue[sId].length) {
+        if (iceCandidatesQueue[sId]?.length) {
           iceCandidatesQueue[sId].forEach(async (candidate) => {
             await peerConnection.addIceCandidate(
               new RTCIceCandidate(candidate)
