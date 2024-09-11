@@ -10,28 +10,35 @@ import {
 
 const WebRTCComponent = () => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [localPeerConnection, setLocalPeerConnection] =
-    useState<RTCPeerConnection | null>(null);
+  // const [localPeerConnection, setLocalPeerConnection] =
+  //   useState<RTCPeerConnection | null>(null);
+  const [localPeerConnections, setLocalPeerConnections] = useState<{
+    [id: string]: RTCPeerConnection;
+  }>({});
   const [pendingOffer, setPendingOffer] = useState<{
-    offer: RTCSessionDescriptionInit;
-    socketId: string;
-  } | null>(null);
-  const [iceCandidatesQueue, setIceCandidatesQueue] = useState<
-    RTCIceCandidateInit[]
-  >([]);
+    [id: string]: {
+      offer: RTCSessionDescriptionInit;
+      socketId: string;
+    } | null;
+  }>({});
+  const [iceCandidatesQueue, setIceCandidatesQueue] = useState<{
+    [id: string]: RTCIceCandidateInit[];
+  }>({});
   const [videoEnabled, setVideoEnabled] = useState<boolean>(false);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
 
   // const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  // const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVidRefs = useRef<{ [id: string]: HTMLVideoElement }>({});
 
   const {
     socket,
     gameState: { playerStates },
     name,
   } = useContext(MyContext);
-  const otherPlayerSocketId = playerStates.filter((p) => p.name !== name)[0]
-    ?.id;
+  const otherSocketIds = playerStates
+    .filter((p) => p.name !== name)
+    .map((e) => e.id);
 
   const signal = (eventName: string, data: any) => {
     socket?.emit(eventName, data);
@@ -78,7 +85,7 @@ const WebRTCComponent = () => {
   };
 
   useEffect(() => {
-    if (!remoteVideoRef.current) return;
+    if (!remoteVidRefs.current.length) return;
 
     // remotePeerConnectionArg.ontrack = (event: RTCTrackEvent) => {
     //   console.log("🚀 ~ useEffect ~ event:", event.streams);
@@ -89,27 +96,37 @@ const WebRTCComponent = () => {
       offer: RTCSessionDescriptionInit,
       socketId: string
     ) => {
-      if (!localPeerConnection) setPendingOffer({ offer, socketId });
+      if (!localPeerConnections[socketId])
+        setPendingOffer((e) => ({ ...e, [socketId]: { socketId, offer } }));
       else {
-        await localPeerConnection.setRemoteDescription(offer);
-        const answer = await localPeerConnection.createAnswer();
-        await localPeerConnection.setLocalDescription(answer);
+        await localPeerConnections[socketId].setRemoteDescription(offer);
+        const answer = await localPeerConnections[socketId].createAnswer();
+        await localPeerConnections[socketId].setLocalDescription(answer);
         signal("answer", { answer, socketId });
       }
     };
 
-    const handleIceCandidate = async (candidate: RTCIceCandidateInit) => {
-      if (localPeerConnection) {
-        await localPeerConnection.addIceCandidate(
+    const handleIceCandidate = async (
+      candidate: RTCIceCandidateInit,
+      socketId: string
+    ) => {
+      if (localPeerConnections[socketId]) {
+        await localPeerConnections[socketId].addIceCandidate(
           new RTCIceCandidate(candidate)
         );
       } else {
-        setIceCandidatesQueue((ie) => [...ie, new RTCIceCandidate(candidate)]);
+        setIceCandidatesQueue((ie) => ({
+          ...ie,
+          [socketId]: [...ie[socketId], new RTCIceCandidate(candidate)],
+        }));
       }
     };
 
-    const handleAnswer = async (answer: RTCSessionDescriptionInit) => {
-      const peer = localPeerConnection;
+    const handleAnswer = async (
+      answer: RTCSessionDescriptionInit,
+      socketId: string
+    ) => {
+      const peer = localPeerConnections[socketId];
       if (peer) {
         await peer.setRemoteDescription(answer);
       }
@@ -125,14 +142,14 @@ const WebRTCComponent = () => {
     socket?.on(
       "candidate",
       (data: { candidate: RTCIceCandidateInit; socketId: string }) => {
-        handleIceCandidate(data.candidate);
+        handleIceCandidate(data.candidate, data.socketId);
       }
     );
 
     socket?.on(
       "answer",
       (data: { answer: RTCSessionDescriptionInit; socketId: string }) => {
-        handleAnswer(data.answer);
+        handleAnswer(data.answer, data.socketId);
       }
     );
 
@@ -141,10 +158,11 @@ const WebRTCComponent = () => {
       socket?.off("candidate");
       socket?.off("answer");
     };
-  }, [localPeerConnection, remoteVideoRef.current, socket]);
+  }, [localPeerConnections, remoteVidRefs.current, socket]);
 
   const startCall = async () => {
-    if (localPeerConnection || !otherPlayerSocketId) return;
+    if (Object.keys(localPeerConnections).length || !otherSocketIds.length)
+      return;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -165,50 +183,53 @@ const WebRTCComponent = () => {
       // if (localVideoRef.current) {
       //   localVideoRef.current.srcObject = stream;
       // }
+      otherSocketIds.forEach(async (sId) => {
+        const peerConnection = new RTCPeerConnection();
 
-      const peerConnection = new RTCPeerConnection();
+        stream
+          .getTracks()
+          .forEach((track) => peerConnection.addTrack(track, stream));
+        peerConnection.ontrack = (event: RTCTrackEvent) => {
+          console.log("🚀 ~ useEffect ~ event:", event.streams);
+          remoteVidRefs.current[sId].srcObject = event.streams[0];
+        };
 
-      stream
-        .getTracks()
-        .forEach((track) => peerConnection.addTrack(track, stream));
-      peerConnection.ontrack = (event: RTCTrackEvent) => {
-        console.log("🚀 ~ useEffect ~ event:", event.streams);
-        remoteVideoRef.current!.srcObject = event.streams[0];
-      };
-
-      peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
-        if (event.candidate) {
-          signal("candidate", {
-            candidate: event.candidate,
-            socketId: otherPlayerSocketId,
-          });
+        peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+          if (event.candidate) {
+            signal("candidate", {
+              candidate: event.candidate,
+              socketId: sId,
+            });
+          }
+        };
+        if (pendingOffer[sId]) {
+          await peerConnection.setRemoteDescription(pendingOffer[sId].offer);
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          signal("answer", { answer, socketId: pendingOffer.socketId });
+          setPendingOffer((e) => ({ ...e, [sId]: null }));
         }
-      };
-      if (pendingOffer) {
-        await peerConnection.setRemoteDescription(pendingOffer.offer);
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        signal("answer", { answer, socketId: pendingOffer.socketId });
-      }
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      if (iceCandidatesQueue.length) {
-        iceCandidatesQueue.forEach(async (candidate) => {
-          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        });
-        setIceCandidatesQueue([]);
-      }
-      signal("offer", { offer, socketId: otherPlayerSocketId });
-
-      setLocalPeerConnection(peerConnection);
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        if (iceCandidatesQueue[sId].length) {
+          iceCandidatesQueue[sId].forEach(async (candidate) => {
+            await peerConnection.addIceCandidate(
+              new RTCIceCandidate(candidate)
+            );
+          });
+          setIceCandidatesQueue((e) => ({ ...e, [sId]: [] }));
+        }
+        signal("offer", { offer, socketId: sId });
+        setLocalPeerConnections((pcs) => ({ ...pcs, [sId]: peerConnection }));
+      });
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
   };
 
   const hangupCall = () => {
-    localPeerConnection?.close();
-    setLocalPeerConnection(null);
+    // localPeerConnection?.close();
+    // setLocalPeerConnection(null);
     setLocalStream(null);
   };
 
@@ -228,15 +249,19 @@ const WebRTCComponent = () => {
         </div>
         <div className="border rounded-lg p-2">
           <h2 className="text-lg font-semibold mb-2">Remote Video</h2>
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            className="w-full h-full border border-gray-300 rounded-lg"
-          />
+          {otherSocketIds.map((id) => (
+            <video
+              ref={(el) => {
+                if (el) remoteVidRefs.current[id] = el;
+              }}
+              autoPlay
+              className="w-full h-full border border-gray-300 rounded-lg"
+            />
+          ))}
         </div>
       </div>
       <div className="flex space-x-4">
-        {!localPeerConnection ? (
+        {!localPeerConnections.length ? (
           <button
             onClick={startCall}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
