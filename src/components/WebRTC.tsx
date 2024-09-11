@@ -185,20 +185,19 @@ const WebRTCComponent = () => {
         }
       };
       if (pendingOffer) {
-        await peerConnection.setLocalDescription(pendingOffer.offer);
+        await peerConnection.setRemoteDescription(pendingOffer.offer);
         const answer = await peerConnection.createAnswer();
-        await peerConnection.setRemoteDescription(answer);
+        await peerConnection.setLocalDescription(answer);
         signal("answer", { answer, socketId: pendingOffer.socketId });
       }
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
       if (iceCandidatesQueue.length) {
         iceCandidatesQueue.forEach(async (candidate) => {
           await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         });
         setIceCandidatesQueue([]);
       }
-
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
       signal("offer", { offer, socketId: otherPlayerSocketId });
 
       setLocalPeerConnection(peerConnection);
