@@ -204,11 +204,11 @@ const WebRTCComponent = () => {
           remoteVidRefs.current[sId].srcObject = event.streams[0];
         };
         if (pendingOffer[sId]) {
-          console.log("Answering connection to: ", sId);
+          console.log("Answering connection to: ", sId, pendingOffer[sId]);
           await peerConnection.setRemoteDescription(pendingOffer[sId].offer);
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);
-          signal("answer", { answer, socketId: pendingOffer.socketId });
+          signal("answer", { answer, socketId: sId });
           setPendingOffer((e) => ({ ...e, [sId]: null }));
           if (iceCandidatesQueue[sId]?.length) {
             iceCandidatesQueue[sId].forEach(async (candidate) => {
