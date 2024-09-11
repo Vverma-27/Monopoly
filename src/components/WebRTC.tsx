@@ -91,7 +91,7 @@ const WebRTCComponent = () => {
   };
 
   useEffect(() => {
-    if (!remoteVidRefs.current.length) return;
+    if (!Object.keys(remoteVidRefs.current).length) return;
 
     // remotePeerConnectionArg.ontrack = (event: RTCTrackEvent) => {
     //   console.log("🚀 ~ useEffect ~ event:", event.streams);
@@ -214,7 +214,8 @@ const WebRTCComponent = () => {
         };
         console.log(
           "🚀 ~ otherSocketIds.forEach ~ pendingOffer[sId]:",
-          pendingOffer[sId],sId
+          pendingOffer[sId],
+          sId
         );
         if (pendingOffer[sId]) {
           await peerConnection.setRemoteDescription(pendingOffer[sId].offer);
