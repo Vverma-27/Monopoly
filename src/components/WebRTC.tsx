@@ -15,28 +15,28 @@ const WebRTCComponent = () => {
   const [localPeerConnections, setLocalPeerConnections] = useState<{
     [id: string]: RTCPeerConnection;
   }>({});
-  console.log(
-    "🚀 ~ WebRTCComponent ~ localPeerConnections:",
-    localPeerConnections
-  );
+  // console.log(
+  //   "🚀 ~ WebRTCComponent ~ localPeerConnections:",
+  //   localPeerConnections
+  // );
   const [pendingOffer, setPendingOffer] = useState<{
     [id: string]: {
       offer: RTCSessionDescriptionInit;
       socketId: string;
     } | null;
   }>({});
-  console.log("🚀 ~ WebRTCComponent ~ pendingOffer:", pendingOffer);
+  // console.log("🚀 ~ WebRTCComponent ~ pendingOffer:", pendingOffer);
   const [iceCandidatesQueue, setIceCandidatesQueue] = useState<{
     [id: string]: RTCIceCandidateInit[];
   }>({});
-  console.log("🚀 ~ WebRTCComponent ~ iceCandidatesQueue:", iceCandidatesQueue);
+  // console.log("🚀 ~ WebRTCComponent ~ iceCandidatesQueue:", iceCandidatesQueue);
   const [videoEnabled, setVideoEnabled] = useState<boolean>(false);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
 
   // const localVideoRef = useRef<HTMLVideoElement>(null);
   // const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVidRefs = useRef<{ [id: string]: HTMLVideoElement }>({});
-  console.log("🚀 ~ WebRTCComponent ~ remoteVidRefs:", remoteVidRefs);
+  // console.log("🚀 ~ WebRTCComponent ~ remoteVidRefs:", remoteVidRefs);
   const {
     socket,
     gameState: { playerStates },
@@ -102,10 +102,10 @@ const WebRTCComponent = () => {
       offer: RTCSessionDescriptionInit,
       socketId: string
     ) => {
-      console.log(
-        "🚀 ~ handleOffer ~ localPeerConnections[socketId]:",
-        localPeerConnections[socketId]
-      );
+      // console.log(
+      //   "🚀 ~ handleOffer ~ localPeerConnections[socketId]:",
+      //   localPeerConnections[socketId]
+      // );
       if (!localPeerConnections[socketId])
         setPendingOffer((e) => ({ ...e, [socketId]: { socketId, offer } }));
       else {
@@ -200,7 +200,7 @@ const WebRTCComponent = () => {
           .getTracks()
           .forEach((track) => peerConnection.addTrack(track, stream));
         peerConnection.ontrack = (event: RTCTrackEvent) => {
-          console.log("🚀 ~ useEffect ~ event:", event.streams);
+          // console.log("🚀 ~ useEffect ~ event:", event.streams);
           remoteVidRefs.current[sId].srcObject = event.streams[0];
         };
 
@@ -212,29 +212,32 @@ const WebRTCComponent = () => {
             });
           }
         };
-        console.log(
-          "🚀 ~ otherSocketIds.forEach ~ pendingOffer[sId]:",
-          pendingOffer[sId],
-          sId
-        );
+        // console.log(
+        //   "🚀 ~ otherSocketIds.forEach ~ pendingOffer[sId]:",
+        //   pendingOffer[sId],
+        //   sId
+        // );
         if (pendingOffer[sId]) {
+          console.log("Answering connection to: ", sId);
           await peerConnection.setRemoteDescription(pendingOffer[sId].offer);
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);
           signal("answer", { answer, socketId: pendingOffer.socketId });
           setPendingOffer((e) => ({ ...e, [sId]: null }));
+          if (iceCandidatesQueue[sId]?.length) {
+            iceCandidatesQueue[sId].forEach(async (candidate) => {
+              await peerConnection.addIceCandidate(
+                new RTCIceCandidate(candidate)
+              );
+            });
+            setIceCandidatesQueue((e) => ({ ...e, [sId]: [] }));
+          }
+        } else {
+          console.log("Offering connection to: ", sId);
+          const offer = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offer);
+          signal("offer", { offer, socketId: sId });
         }
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        if (iceCandidatesQueue[sId]?.length) {
-          iceCandidatesQueue[sId].forEach(async (candidate) => {
-            await peerConnection.addIceCandidate(
-              new RTCIceCandidate(candidate)
-            );
-          });
-          setIceCandidatesQueue((e) => ({ ...e, [sId]: [] }));
-        }
-        signal("offer", { offer, socketId: sId });
         setLocalPeerConnections((pcs) => ({ ...pcs, [sId]: peerConnection }));
       });
     } catch (error) {
