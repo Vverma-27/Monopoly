@@ -1,8 +1,17 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import DiceGLB from "../assets/dice.glb?url";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { Mesh } from "three";
+import { Material, Mesh, Vector3 } from "three";
+
+type GLTFResult = {
+  nodes: {
+    Object_4: Mesh;
+  };
+  materials: {
+    Dice: Material;
+  };
+};
 
 const Dice = ({
   onFinish,
@@ -11,19 +20,19 @@ const Dice = ({
   onFinish: () => void;
   randomNumber: number;
 }) => {
-  const { nodes, materials } = useGLTF(DiceGLB);
+  const { nodes, materials } = useGLTF(DiceGLB) as unknown as GLTFResult;
   const diceRef = useRef<Mesh>(null);
-
   // Physics parameters
-  const gravity = -19.6; // Increased gravity acceleration (m/s^2)
-  const bounceDamping = 0.6; // Damping factor for each bounce
-  const initialVelocity = { x: 2, y: 2, z: 1.5 }; // Reduced initial velocity in z-axis
-  const minVelocityThreshold = 0.2; // Minimum velocity to stop bouncing
+  const gravity = -9.8;
+  const bounceDamping = 0.5;
+  const initialVelocity = new Vector3(-2.5, 2.5, 3); // Slightly adjusted for new starting position
+  const minVelocityThreshold = 0.1;
 
-  // State for position and velocity
+  // State for position, velocity, and animation control
   const [velocity, setVelocity] = useState(initialVelocity);
-  const [position, setPosition] = useState({ x: 7, y: -7, z: 3 });
-  const [bouncing, setBouncing] = useState(true); // State to control animation
+  const [position, setPosition] = useState(new Vector3(7, -7, 2)); // Moved further to bottom right
+  const [bouncing, setBouncing] = useState(true);
+  const [startTime] = useState(Date.now());
 
   // Predefined rotations
   const rotations = [
@@ -35,60 +44,55 @@ const Dice = ({
     [(Math.PI * 3) / 2, 0, 0],
   ];
 
-  useFrame((_state, delta) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBouncing(false);
+      if (diceRef.current) {
+        const targetRotation = rotations[randomNumber - 1];
+        diceRef.current.rotation.set(
+          targetRotation[0],
+          targetRotation[1],
+          targetRotation[2]
+        );
+      }
+      onFinish();
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useFrame((_, delta) => {
     if (!diceRef.current || !bouncing) return;
 
-    // Limit the delta to a maximum value to avoid glitches when switching tabs
     const clampedDelta = Math.min(delta, 0.05);
 
-    // Update position based on velocity
-    const newPosition = {
-      x: position.x - velocity.x * clampedDelta,
-      y: position.y + velocity.y * clampedDelta,
-      z: position.z + velocity.z * clampedDelta,
-    };
+    const newPosition = position
+      .clone()
+      .add(velocity.clone().multiplyScalar(clampedDelta));
+    const newVelocity = velocity
+      .clone()
+      .add(new Vector3(0, 0, gravity * clampedDelta));
 
-    // Apply gravity to the velocity
-    const newVelocity = {
-      x: velocity.x,
-      y: velocity.y,
-      z: velocity.z + gravity * clampedDelta,
-    };
-
-    // Check for bounce
     if (newPosition.z <= 0 && newVelocity.z < 0) {
-      // Invert the velocity and apply damping
       newVelocity.z = -newVelocity.z * bounceDamping;
+      newPosition.z = 0;
 
-      // Stop the animation if the bounce is negligible
+      newVelocity.x *= 0.8;
+      newVelocity.y *= 0.8;
+
       if (newVelocity.z < minVelocityThreshold) {
-        newVelocity.z = 0;
-        newPosition.z = 0;
+        newVelocity.set(0, 0, 0);
         setBouncing(false);
-
-        // Snap to the final predefined rotation
-        if (diceRef.current) {
-          const targetRotation = rotations[randomNumber - 1];
-          diceRef.current.rotation.set(
-            targetRotation[0],
-            targetRotation[1],
-            targetRotation[2]
-          );
-        }
-        setTimeout(() => onFinish(), 500);
       }
     }
 
-    // Apply updated position and velocity
-    diceRef.current.position.set(newPosition.x, newPosition.y, newPosition.z);
+    diceRef.current.position.copy(newPosition);
 
-    // Apply random rotation effect while bouncing
-    if (diceRef.current) {
-      diceRef.current.rotation.x += velocity.x * clampedDelta;
-      diceRef.current.rotation.y += velocity.y * clampedDelta;
-    }
+    const rotationFactor = 0.5;
+    diceRef.current.rotation.x += newVelocity.x * clampedDelta * rotationFactor;
+    diceRef.current.rotation.y += newVelocity.y * clampedDelta * rotationFactor;
+    diceRef.current.rotation.z += newVelocity.z * clampedDelta * rotationFactor;
 
-    // Update state with the new position and velocity
     setPosition(newPosition);
     setVelocity(newVelocity);
   });
@@ -98,12 +102,10 @@ const Dice = ({
       <group rotation={[0, 0, 0]} scale={0.423}>
         <mesh
           ref={diceRef}
-          //@ts-ignore
           geometry={nodes.Object_4.geometry}
           material={materials.Dice}
           castShadow
           scale={[1, 1, 1]}
-          position={[7, -7, 3]} // Initial position
         />
       </group>
     </group>
