@@ -15,22 +15,28 @@ const WebRTCComponent = () => {
   const [localPeerConnections, setLocalPeerConnections] = useState<{
     [id: string]: RTCPeerConnection;
   }>({});
+  console.log(
+    "🚀 ~ WebRTCComponent ~ localPeerConnections:",
+    localPeerConnections
+  );
   const [pendingOffer, setPendingOffer] = useState<{
     [id: string]: {
       offer: RTCSessionDescriptionInit;
       socketId: string;
     } | null;
   }>({});
+  console.log("🚀 ~ WebRTCComponent ~ pendingOffer:", pendingOffer);
   const [iceCandidatesQueue, setIceCandidatesQueue] = useState<{
     [id: string]: RTCIceCandidateInit[];
   }>({});
+  console.log("🚀 ~ WebRTCComponent ~ iceCandidatesQueue:", iceCandidatesQueue);
   const [videoEnabled, setVideoEnabled] = useState<boolean>(false);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
 
   // const localVideoRef = useRef<HTMLVideoElement>(null);
   // const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVidRefs = useRef<{ [id: string]: HTMLVideoElement }>({});
-
+  console.log("🚀 ~ WebRTCComponent ~ remoteVidRefs:", remoteVidRefs);
   const {
     socket,
     gameState: { playerStates },
@@ -96,6 +102,10 @@ const WebRTCComponent = () => {
       offer: RTCSessionDescriptionInit,
       socketId: string
     ) => {
+      console.log(
+        "🚀 ~ handleOffer ~ localPeerConnections[socketId]:",
+        localPeerConnections[socketId]
+      );
       if (!localPeerConnections[socketId])
         setPendingOffer((e) => ({ ...e, [socketId]: { socketId, offer } }));
       else {
@@ -202,6 +212,10 @@ const WebRTCComponent = () => {
             });
           }
         };
+        console.log(
+          "🚀 ~ otherSocketIds.forEach ~ pendingOffer[sId]:",
+          pendingOffer[sId],sId
+        );
         if (pendingOffer[sId]) {
           await peerConnection.setRemoteDescription(pendingOffer[sId].offer);
           const answer = await peerConnection.createAnswer();
