@@ -257,7 +257,7 @@ const WebRTCComponent = () => {
 
   return (
     <div className="p-2 absolute top-0 left-0 z-[1] h-full">
-      <div className="grid grid-cols-2 gap-2 grid-rows-3 h-full">
+      <div className="grid grid-cols-2 gap-2 grid-rows-3 h-full w-full">
         <div className="border rounded-lg p-2 relative bg-black overflow-hidden">
           <video
             ref={(e) => {
