@@ -256,16 +256,16 @@ const WebRTCComponent = () => {
   };
 
   return (
-    <div className="p-2 absolute top-0 left-0 z-[1]">
-      <div className="grid grid-cols-2 gap-2">
-        <div className="border rounded-lg p-2 relative bg-black">
+    <div className="p-2 absolute top-0 left-0 z-[1] h-full">
+      <div className="grid grid-cols-2 gap-2 grid-rows-3 h-full">
+        <div className="border rounded-lg p-2 relative bg-black overflow-hidden">
           <video
             ref={(e) => {
               if (e) e.srcObject = localStream;
             }}
             autoPlay
             muted
-            className="w-full h-full "
+            className="w-full h-full object-cover"
           />
           <div className="action-buttons absolute bottom-1 left-1 flex gap-1 items-end w-full">
             <p className=" text-white font-normal text-xs flex-1">{name}</p>
@@ -313,7 +313,7 @@ const WebRTCComponent = () => {
                 if (el) remoteVidRefs.current[otherSocketIds[i]] = el;
               }}
               autoPlay
-              className="w-full h-full "
+              className="w-full h-full object-cover"
             />
             <p className="absolute bottom-1 left-1 text-white font-normal text-xs">
               {name}
