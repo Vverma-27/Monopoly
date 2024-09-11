@@ -203,20 +203,6 @@ const WebRTCComponent = () => {
           // console.log("🚀 ~ useEffect ~ event:", event.streams);
           remoteVidRefs.current[sId].srcObject = event.streams[0];
         };
-
-        peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
-          if (event.candidate) {
-            signal("candidate", {
-              candidate: event.candidate,
-              socketId: sId,
-            });
-          }
-        };
-        // console.log(
-        //   "🚀 ~ otherSocketIds.forEach ~ pendingOffer[sId]:",
-        //   pendingOffer[sId],
-        //   sId
-        // );
         if (pendingOffer[sId]) {
           console.log("Answering connection to: ", sId);
           await peerConnection.setRemoteDescription(pendingOffer[sId].offer);
@@ -238,6 +224,20 @@ const WebRTCComponent = () => {
           await peerConnection.setLocalDescription(offer);
           signal("offer", { offer, socketId: sId });
         }
+
+        peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+          if (event.candidate) {
+            signal("candidate", {
+              candidate: event.candidate,
+              socketId: sId,
+            });
+          }
+        };
+        // console.log(
+        //   "🚀 ~ otherSocketIds.forEach ~ pendingOffer[sId]:",
+        //   pendingOffer[sId],
+        //   sId
+        // );
         setLocalPeerConnections((pcs) => ({ ...pcs, [sId]: peerConnection }));
       });
     } catch (error) {
