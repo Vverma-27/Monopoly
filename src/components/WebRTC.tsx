@@ -12,12 +12,13 @@ const WebRTCComponent = () => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [localPeerConnection, setLocalPeerConnection] =
     useState<RTCPeerConnection | null>(null);
-  const [remotePeerConnection, setRemotePeerConnection] =
-    useState<RTCPeerConnection | null>(null);
   const [pendingOffer, setPendingOffer] = useState<{
     offer: RTCSessionDescriptionInit;
     socketId: string;
   } | null>(null);
+  const [iceCandidatesQueue, setIceCandidatesQueue] = useState<
+    RTCIceCandidateInit[]
+  >([]);
   const [videoEnabled, setVideoEnabled] = useState<boolean>(false);
   const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
 
@@ -78,13 +79,11 @@ const WebRTCComponent = () => {
 
   useEffect(() => {
     if (!remoteVideoRef.current) return;
-    const remotePeerConnectionArg = new RTCPeerConnection();
-    setRemotePeerConnection(remotePeerConnectionArg);
 
-    remotePeerConnectionArg.ontrack = (event: RTCTrackEvent) => {
-      console.log("🚀 ~ useEffect ~ event:", event.streams);
-      remoteVideoRef.current!.srcObject = event.streams[0];
-    };
+    // remotePeerConnectionArg.ontrack = (event: RTCTrackEvent) => {
+    //   console.log("🚀 ~ useEffect ~ event:", event.streams);
+    //   remoteVideoRef.current!.srcObject = event.streams[0];
+    // };
 
     const handleOffer = async (
       offer: RTCSessionDescriptionInit,
@@ -92,18 +91,20 @@ const WebRTCComponent = () => {
     ) => {
       if (!localPeerConnection) setPendingOffer({ offer, socketId });
       else {
-        await remotePeerConnectionArg.setLocalDescription(offer);
+        await localPeerConnection.setRemoteDescription(offer);
         const answer = await localPeerConnection.createAnswer();
-        await remotePeerConnectionArg.setRemoteDescription(answer);
+        await localPeerConnection.setLocalDescription(answer);
         signal("answer", { answer, socketId });
       }
     };
 
     const handleIceCandidate = async (candidate: RTCIceCandidateInit) => {
-      if (remotePeerConnectionArg) {
-        await remotePeerConnectionArg.addIceCandidate(
+      if (localPeerConnection) {
+        await localPeerConnection.addIceCandidate(
           new RTCIceCandidate(candidate)
         );
+      } else {
+        setIceCandidatesQueue((ie) => [...ie, new RTCIceCandidate(candidate)]);
       }
     };
 
@@ -170,6 +171,10 @@ const WebRTCComponent = () => {
       stream
         .getTracks()
         .forEach((track) => peerConnection.addTrack(track, stream));
+      peerConnection.ontrack = (event: RTCTrackEvent) => {
+        console.log("🚀 ~ useEffect ~ event:", event.streams);
+        remoteVideoRef.current!.srcObject = event.streams[0];
+      };
 
       peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
         if (event.candidate) {
@@ -179,11 +184,17 @@ const WebRTCComponent = () => {
           });
         }
       };
-      if (pendingOffer && remotePeerConnection) {
-        await remotePeerConnection.setLocalDescription(pendingOffer.offer);
+      if (pendingOffer) {
+        await peerConnection.setLocalDescription(pendingOffer.offer);
         const answer = await peerConnection.createAnswer();
-        await remotePeerConnection.setRemoteDescription(answer);
+        await peerConnection.setRemoteDescription(answer);
         signal("answer", { answer, socketId: pendingOffer.socketId });
+      }
+      if (iceCandidatesQueue.length) {
+        iceCandidatesQueue.forEach(async (candidate) => {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        });
+        setIceCandidatesQueue([]);
       }
 
       const offer = await peerConnection.createOffer();
