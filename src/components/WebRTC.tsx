@@ -127,7 +127,7 @@ const WebRTCComponent = () => {
       } else {
         setIceCandidatesQueue((ie) => ({
           ...ie,
-          [socketId]: [...ie[socketId], new RTCIceCandidate(candidate)],
+          [socketId]: [...(ie[socketId] || []), new RTCIceCandidate(candidate)],
         }));
       }
     };
