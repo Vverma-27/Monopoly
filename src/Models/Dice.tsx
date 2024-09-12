@@ -32,7 +32,6 @@ const Dice = ({
   const [velocity, setVelocity] = useState(initialVelocity);
   const [position, setPosition] = useState(new Vector3(7, -7, 2)); // Moved further to bottom right
   const [bouncing, setBouncing] = useState(true);
-  const [startTime] = useState(Date.now());
 
   // Predefined rotations
   const rotations = [
